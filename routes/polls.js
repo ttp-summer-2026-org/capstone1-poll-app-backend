@@ -1,9 +1,9 @@
 const express = require('express')
-const router = ecpress.Router()
+const router = express.Router()
 
-const {Poll, Option, Vote} = require('.../models')
+const {Poll, Option, Vote} = require("../models")
 
-router('/', async (req, res)=>{
+router.get('/', async (req, res)=>{
     try {
         const allPOlls = await Poll.findAll();
         res.status(200).json(allPOlls)
