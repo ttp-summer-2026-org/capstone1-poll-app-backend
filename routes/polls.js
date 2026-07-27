@@ -112,51 +112,42 @@ router.get("/:id", async (req, res) => {
 
 // POST /polls/:id/vote
 // Submit a vote
-router.post("/:id/vote", async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { optionId } = req.body;
 
-    if (!optionId) {
-      return res.status(400).json({
-        msg: "Select an option to vote",
-      });
-    }
+    const singlePoll = await Poll.findByPk(id, {
+      include: [
+        {
+          model: Option,
+          include: [Vote],
+        },
+      ],
+    });
 
-    const poll = await Poll.findByPk(id);
-
-    if (!poll) {
+    if (!singlePoll) {
       return res.status(404).json({
         msg: "Poll not found",
       });
     }
 
-    const selectedOption = await Option.findOne({
-      where: {
-        id: optionId,
-        pollId: id,
-      },
-    });
+    const pollData = singlePoll.toJSON();
 
-    if (!selectedOption) {
-      return res.status(400).json({
-        msg: "This option does not belong to this poll",
-      });
-    }
+    pollData.Options = pollData.Options
+      .map((option) => ({
+        id: option.id,
+        text: option.text,
+        pollId: option.pollId,
+        voteCount: option.Votes.length,
+      }))
+      .sort((a, b) => b.voteCount - a.voteCount);
 
-    const newVote = await Vote.create({
-      optionId,
-    });
-
-    res.status(201).json({
-      msg: "Vote cast successfully",
-      vote: newVote,
-    });
+    res.status(200).json(pollData);
   } catch (error) {
-    console.error("Vote error:", error);
+    console.error("Get poll error:", error);
 
     res.status(500).json({
-      msg: "Vote casting failed",
+      msg: "Failed to get poll",
     });
   }
 });
